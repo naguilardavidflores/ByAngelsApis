@@ -13,7 +13,6 @@ function getFirebaseConfig() {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
 
-  // Reemplazar saltos de línea literales en caso de configurarse vía Vercel/Env
   const privateKey = privateKeyRaw ? privateKeyRaw.replace(/\\n/g, '\n') : '';
 
   return {
@@ -21,6 +20,7 @@ function getFirebaseConfig() {
     clientEmail,
     privateKey
   };
+}
 }
 
 // Inicialización de Firebase Admin SDK usando los parámetros configurados
