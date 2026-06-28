@@ -1,0 +1,47 @@
+# Dependencies
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/build/
+**/coverage/
+**/.vite/
+**/.turbo/
+
+# Environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs
+**/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Vite / React local artifacts
+**/*.local
+
+# Firebase / deploy artifacts
+**/.firebase/
+**/.firebaserc
+**/firebase-debug.log
+
+# Capacitor / mobile build artifacts
+**/android/
+**/ios/
+**/capacitor-*
