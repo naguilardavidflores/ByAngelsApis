@@ -21,7 +21,7 @@ function getFirebaseConfig() {
     privateKey
   };
 }
-}
+
 
 // Inicialización de Firebase Admin SDK usando los parámetros configurados
 try {
