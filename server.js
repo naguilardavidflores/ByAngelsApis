@@ -67,6 +67,15 @@ app.get('/api/shopreel', async (req, res) => {
       );
     }
 
+    // Sort products: priority to 'numorden' (ascending), items without 'numorden' go to the end
+    filteredProducts.sort((a, b) => {
+      const numA = Number(a.numorden);
+      const numB = Number(b.numorden);
+      const orderA = (a.numorden !== undefined && a.numorden !== null && a.numorden !== '' && !isNaN(numA)) ? numA : Infinity;
+      const orderB = (b.numorden !== undefined && b.numorden !== null && b.numorden !== '' && !isNaN(numB)) ? numB : Infinity;
+      return orderA - orderB;
+    });
+
     res.json(filteredProducts);
   } catch (error) {
     console.error('Error fetching shopreel products:', error);
