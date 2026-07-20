@@ -7,6 +7,10 @@ let db = null;
 let isMock = false;
 let mockData = null;
 
+// Cache memory and TTL (5 minutes)
+const firestoreCache = {};
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
 // FUNCIÓN 1: Configurar y obtener los parámetros de credenciales de Firebase
 function getFirebaseConfig() {
   const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -53,26 +57,45 @@ try {
   }
 }
 
-// FUNCIÓN 2: Ejecutar peticiones a la base de datos (con fallback automático)
+// FUNCIÓN 2: Ejecutar peticiones a la base de datos (con fallback automático y caché)
 async function executeFirebaseQuery(collectionName) {
   if (isMock) {
     return mockData[collectionName] || [];
   }
 
+  const now = Date.now();
+  if (firestoreCache[collectionName] && (now - firestoreCache[collectionName].timestamp < CACHE_TTL_MS)) {
+    console.log(`[Cache Hit] Serving collection "${collectionName}" from memory`);
+    return firestoreCache[collectionName].data;
+  }
+
   try {
+    console.log(`[Cache Miss] Fetching collection "${collectionName}" from Firebase Firestore`);
     const snapshot = await db.collection(collectionName).get();
     const items = [];
     snapshot.forEach(doc => {
       items.push({ id: doc.id, ...doc.data() });
     });
+    
+    // Save to cache
+    firestoreCache[collectionName] = {
+      timestamp: now,
+      data: items
+    };
+
     return items;
   } catch (error) {
     console.error(`Error querying Firestore collection "${collectionName}":`, error);
-    // Fallback de seguridad al archivo JSON local
+    // Fallback de seguridad al archivo JSON local (también lo cacheamos temporalmente para no reintentar fallidos infinitamente)
     const mockFilePath = path.join(__dirname, 'mockData.json');
     if (fs.existsSync(mockFilePath)) {
       const data = JSON.parse(fs.readFileSync(mockFilePath, 'utf8'));
-      return data[collectionName] || [];
+      const fallbackData = data[collectionName] || [];
+      firestoreCache[collectionName] = {
+        timestamp: now,
+        data: fallbackData
+      };
+      return fallbackData;
     }
     return [];
   }
