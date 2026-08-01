@@ -261,12 +261,177 @@ async function getNextContactoNumber() {
   };
 }
 
+/**
+ * Creates a new product in the ShopReel collection.
+ * Automatically calculates the next incrementing numorden value.
+ */
+async function createShopReelProduct(productData) {
+  // Fetch existing items to calculate auto-incrementing numorden
+  const existingProducts = await executeFirebaseQuery('ShopReel');
+  let maxOrder = 0;
+  existingProducts.forEach(p => {
+    const val = Number(p.numorden !== undefined ? p.numorden : p.numOrden);
+    if (!isNaN(val) && val > maxOrder) {
+      maxOrder = val;
+    }
+  });
+
+  const nextOrder = maxOrder + 1;
+  const formattedProduct = {
+    Nombre: productData.Nombre || '',
+    Categoria: productData.Categoria || 'Casual',
+    Color: productData.Color || '',
+    Precio: String(productData.Precio || '0.00'),
+    Nuevo: productData.Nuevo === true || productData.Nuevo === 'Si' || productData.Nuevo === 'true' ? 'Si' : 'No',
+    Tendencia: productData.Tendencia === true || productData.Tendencia === 'Si' || productData.Tendencia === 'true' ? 'Si' : 'No',
+    numorden: String(nextOrder),
+    imgReel0: productData.imgReel0 || '',
+    imgReel1: productData.imgReel1 || '',
+    imgReel2: productData.imgReel2 || '',
+    imgReel3: productData.imgReel3 || '',
+    imgReel4: productData.imgReel4 || '',
+    imgReel5: productData.imgReel5 || '',
+    imgReel6: productData.imgReel6 || ''
+  };
+
+  // Invalidate cache
+  delete firestoreCache['ShopReel'];
+
+  if (!isMock && db) {
+    try {
+      const docRef = await db.collection('ShopReel').add({
+        ...formattedProduct,
+        creadoEn: admin.firestore.FieldValue.serverTimestamp(),
+        actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return { id: docRef.id, ...formattedProduct };
+    } catch (err) {
+      console.error('Error creating product in Firestore:', err);
+    }
+  }
+
+  // Mock Fallback
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  const newId = 'prod_' + Date.now();
+  const createdItem = { id: newId, ...formattedProduct };
+
+  if (!mockData.shopReel) mockData.shopReel = [];
+  mockData.shopReel.push(createdItem);
+
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on create:', err.message);
+  }
+
+  return createdItem;
+}
+
+/**
+ * Updates an existing product in the ShopReel collection without modifying its numorden.
+ */
+async function updateShopReelProduct(id, productData) {
+  delete firestoreCache['ShopReel'];
+
+  const updatedFields = {
+    Nombre: productData.Nombre || '',
+    Categoria: productData.Categoria || 'Casual',
+    Color: productData.Color || '',
+    Precio: String(productData.Precio || '0.00'),
+    Nuevo: productData.Nuevo === true || productData.Nuevo === 'Si' || productData.Nuevo === 'true' ? 'Si' : 'No',
+    Tendencia: productData.Tendencia === true || productData.Tendencia === 'Si' || productData.Tendencia === 'true' ? 'Si' : 'No',
+    imgReel0: productData.imgReel0 || '',
+    imgReel1: productData.imgReel1 || '',
+    imgReel2: productData.imgReel2 || '',
+    imgReel3: productData.imgReel3 || '',
+    imgReel4: productData.imgReel4 || '',
+    imgReel5: productData.imgReel5 || '',
+    imgReel6: productData.imgReel6 || ''
+  };
+
+  if (productData.numorden !== undefined && productData.numorden !== null) {
+    updatedFields.numorden = String(productData.numorden);
+  }
+
+  if (!isMock && db) {
+    try {
+      await db.collection('ShopReel').doc(id).set(
+        {
+          ...updatedFields,
+          actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+      return { id, ...updatedFields };
+    } catch (err) {
+      console.error('Error updating product in Firestore:', err);
+    }
+  }
+
+  // Mock Fallback
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  if (mockData.shopReel) {
+    const idx = mockData.shopReel.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      mockData.shopReel[idx] = { ...mockData.shopReel[idx], ...updatedFields };
+    }
+  }
+
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on update:', err.message);
+  }
+
+  return { id, ...updatedFields };
+}
+
+/**
+ * Deletes a product from the ShopReel collection.
+ */
+async function deleteShopReelProduct(id) {
+  delete firestoreCache['ShopReel'];
+
+  if (!isMock && db) {
+    try {
+      await db.collection('ShopReel').doc(id).delete();
+      return { success: true, id };
+    } catch (err) {
+      console.error('Error deleting product from Firestore:', err);
+    }
+  }
+
+  // Mock Fallback
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  if (mockData.shopReel) {
+    mockData.shopReel = mockData.shopReel.filter(p => p.id !== id);
+  }
+
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on delete:', err.message);
+  }
+
+  return { success: true, id };
+}
+
 module.exports = {
   db,
   isMock,
   getFirebaseConfig,
   executeFirebaseQuery,
   getContactoInfo,
-  getNextContactoNumber
+  getNextContactoNumber,
+  createShopReelProduct,
+  updateShopReelProduct,
+  deleteShopReelProduct
 };
+
 

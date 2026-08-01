@@ -3,7 +3,15 @@ const cors = require('cors');
 const https = require('https');
 const compression = require('compression');
 require('dotenv').config();
-const { executeFirebaseQuery, isMock, getContactoInfo, getNextContactoNumber } = require('./firebase');
+const { 
+  executeFirebaseQuery, 
+  isMock, 
+  getContactoInfo, 
+  getNextContactoNumber,
+  createShopReelProduct,
+  updateShopReelProduct,
+  deleteShopReelProduct
+} = require('./firebase');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -105,6 +113,41 @@ app.get('/api/shopreel', async (req, res) => {
     res.json(filteredProducts);
   } catch (error) {
     console.error('Error fetching shopreel products:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// POST /api/shopreel - Create a new product (Auto-increments numorden)
+app.post('/api/shopreel', async (req, res) => {
+  try {
+    const newProduct = await createShopReelProduct(req.body);
+    res.status(201).json(newProduct);
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// PUT /api/shopreel/:id - Update an existing product
+app.put('/api/shopreel/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedProduct = await updateShopReelProduct(id, req.body);
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// DELETE /api/shopreel/:id - Delete a product
+app.delete('/api/shopreel/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await deleteShopReelProduct(id);
+    res.json(result);
+  } catch (error) {
+    console.error('Error deleting product:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 });
