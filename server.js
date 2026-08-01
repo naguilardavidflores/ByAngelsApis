@@ -167,7 +167,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 ByAngels Backend API running on http://localhost:${PORT}`);
-  console.log(`Database mode: ${isMock ? 'LOCAL MOCK' : 'FIREBASE CLOUD'}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 ByAngels Backend API running on http://localhost:${PORT}`);
+    console.log(`Database mode: ${isMock ? 'LOCAL MOCK' : 'FIREBASE CLOUD'}`);
+  });
+}
+
+module.exports = app;
