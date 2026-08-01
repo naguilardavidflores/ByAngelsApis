@@ -3,7 +3,7 @@ const cors = require('cors');
 const https = require('https');
 const compression = require('compression');
 require('dotenv').config();
-const { executeFirebaseQuery, isMock } = require('./firebase');
+const { executeFirebaseQuery, isMock, getContactoInfo, getNextContactoNumber } = require('./firebase');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,7 +28,9 @@ app.get('/', (req, res) => {
       '/api/shopreel',
       '/api/Musics',
       '/api/notice',
-      '/api/inicio'
+      '/api/inicio',
+      '/api/contacto',
+      '/api/contacto/next'
     ]
   });
 });
@@ -130,6 +132,32 @@ app.get('/api/notice', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 });
+
+// GET /api/contacto - Consults current contact document/info without advancing index
+app.get('/api/contacto', async (req, res) => {
+  try {
+    const contactoInfo = await getContactoInfo();
+    res.json(contactoInfo);
+  } catch (error) {
+    console.error('Error fetching contacto info:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// GET & POST /api/contacto/next - Rotates and gets the next WhatsApp number for customer orders
+const handleNextContacto = async (req, res) => {
+  try {
+    const nextContacto = await getNextContactoNumber();
+    res.json(nextContacto);
+  } catch (error) {
+    console.error('Error fetching next contacto number:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+};
+
+app.get('/api/contacto/next', handleNextContacto);
+app.post('/api/contacto/next', handleNextContacto);
+app.post('/api/contacto', handleNextContacto);
 
 // GET /api/proxy-video/* - Proxies video streams and segment files to bypass CORS restrictions
 app.get('/api/proxy-video/*', (req, res) => {

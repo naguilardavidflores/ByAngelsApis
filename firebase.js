@@ -101,9 +101,172 @@ async function executeFirebaseQuery(collectionName) {
   }
 }
 
+// Default WhatsApp numbers for round-robin load distribution
+const DEFAULT_WHATSAPP_NUMBERS = [
+  '51900962934',
+  '51931248203',
+  '51928391496'
+];
+
+/**
+ * Retrieves current contact configuration from Firestore or Mock DB
+ */
+async function getContactoInfo() {
+  if (!isMock && db) {
+    try {
+      const docRef = db.collection('contacto').doc('contacto');
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        return { id: docSnap.id, ...docSnap.data() };
+      }
+      // Check collection if doc 'contacto' doesn't exist directly
+      const snapshot = await db.collection('contacto').get();
+      if (!snapshot.empty) {
+        const firstDoc = snapshot.docs[0];
+        return { id: firstDoc.id, ...firstDoc.data() };
+      }
+    } catch (err) {
+      console.warn('⚠️ Error fetching contacto info from Firestore:', err.message);
+    }
+  }
+
+  // Fallback / Mock mode
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  if (fs.existsSync(mockFilePath)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(mockFilePath, 'utf8'));
+      if (data.contacto) return data.contacto;
+    } catch (e) {}
+  }
+
+  return {
+    numeros: DEFAULT_WHATSAPP_NUMBERS,
+    indiceActual: 0
+  };
+}
+
+/**
+ * Gets the next rotated WhatsApp number for client orders and updates the database document.
+ * If document "contacto" does not exist in Firestore or Mock DB, creates it starting with index 0.
+ */
+async function getNextContactoNumber() {
+  if (!isMock && db) {
+    try {
+      const docRef = db.collection('contacto').doc('contacto');
+      const docSnap = await docRef.get();
+
+      let numeros = DEFAULT_WHATSAPP_NUMBERS;
+      let indiceActual = 0;
+      let targetRef = docRef;
+
+      if (!docSnap.exists) {
+        // Check if any doc exists in collection 'contacto'
+        const snapshot = await db.collection('contacto').get();
+        if (snapshot.empty) {
+          console.log('📌 Firestore document "contacto" does not exist. Creating default document starting at index 0...');
+          const initialData = {
+            numeros: DEFAULT_WHATSAPP_NUMBERS,
+            indiceActual: 0,
+            creadoEn: admin.firestore.FieldValue.serverTimestamp(),
+            actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+          };
+          await docRef.set(initialData);
+        } else {
+          targetRef = snapshot.docs[0].ref;
+          const data = snapshot.docs[0].data();
+          if (Array.isArray(data.numeros) && data.numeros.length > 0) {
+            numeros = data.numeros;
+          }
+          if (typeof data.indiceActual === 'number') {
+            indiceActual = data.indiceActual;
+          }
+        }
+      } else {
+        const data = docSnap.data();
+        if (Array.isArray(data.numeros) && data.numeros.length > 0) {
+          numeros = data.numeros;
+        }
+        if (typeof data.indiceActual === 'number') {
+          indiceActual = data.indiceActual;
+        }
+      }
+
+      // Calculate index for current customer
+      const currentIndex = (indiceActual % numeros.length + numeros.length) % numeros.length;
+      const selectedNumber = numeros[currentIndex];
+
+      // Advance index for the next customer
+      const nextIndex = (currentIndex + 1) % numeros.length;
+      await targetRef.set({
+        numeros,
+        indiceActual: nextIndex,
+        actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      console.log(`📱 [Firestore Contact Rotation] Client connected to: ${selectedNumber} (Index: ${currentIndex} -> Next: ${nextIndex})`);
+
+      return {
+        whatsappNumber: selectedNumber,
+        indiceActual: currentIndex,
+        nextIndice: nextIndex,
+        numeros
+      };
+    } catch (error) {
+      console.error('❌ Firestore Contact Rotation Error:', error.message);
+    }
+  }
+
+  // Local Mock / Fallback Mode
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  let data = mockData;
+  if (fs.existsSync(mockFilePath)) {
+    try {
+      data = JSON.parse(fs.readFileSync(mockFilePath, 'utf8'));
+    } catch (e) {
+      data = mockData || {};
+    }
+  }
+
+  if (!data.contacto || !Array.isArray(data.contacto.numeros) || data.contacto.numeros.length === 0) {
+    data.contacto = {
+      id: 'contacto_doc',
+      numeros: DEFAULT_WHATSAPP_NUMBERS,
+      indiceActual: 0
+    };
+  }
+
+  const numeros = data.contacto.numeros;
+  const currentIndex = (data.contacto.indiceActual % numeros.length + numeros.length) % numeros.length;
+  const selectedNumber = numeros[currentIndex];
+  const nextIndex = (currentIndex + 1) % numeros.length;
+
+  data.contacto.indiceActual = nextIndex;
+  mockData = data;
+
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(data, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not persist updated mockData.json:', err.message);
+  }
+
+  console.log(`📱 [Mock Contact Rotation] Client connected to: ${selectedNumber} (Index: ${currentIndex} -> Next: ${nextIndex})`);
+
+  return {
+    whatsappNumber: selectedNumber,
+    indiceActual: currentIndex,
+    nextIndice: nextIndex,
+    numeros
+  };
+}
+
 module.exports = {
   db,
   isMock,
   getFirebaseConfig,
-  executeFirebaseQuery
+  executeFirebaseQuery,
+  getContactoInfo,
+  getNextContactoNumber
 };
+

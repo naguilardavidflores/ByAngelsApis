@@ -163,5 +163,14 @@
       "urlN2": "https://i.pinimg.com/736x/cf/e6/78/cfe678d49a37c95e0c52bb744cf2fbdc.jpg",
       "urlN3": "https://i.pinimg.com/736x/ae/bc/d9/aebcd9df1c750ef95f27ecbc0d2f6279.jpg"
     }
-  ]
+  ],
+  "contacto": {
+    "id": "contacto_doc",
+    "numeros": [
+      "51900962934",
+      "51931248203",
+      "51928391496"
+    ],
+    "indiceActual": 0
+  }
 }
