@@ -56,23 +56,25 @@ app.get('/api/shopreel', async (req, res) => {
     // Filter by style (category or boolean flags)
     if (style && style.trim() !== '') {
       const targetStyle = style.trim().toLowerCase();
-      if (targetStyle === 'nuevo' || targetStyle === 'new') {
-        filteredProducts = filteredProducts.filter(p =>
-          p.Nuevo === true ||
-          p.Nuevo === 'true' ||
-          (typeof p.Nuevo === 'string' && (p.Nuevo.toLowerCase() === 'si' || p.Nuevo.toLowerCase() === 'yes' || p.Nuevo.toLowerCase() === 'true'))
-        );
-      } else if (targetStyle === 'tendencia' || targetStyle === 'trending') {
-        filteredProducts = filteredProducts.filter(p =>
-          p.Tendencia === true ||
-          p.Tendencia === 'true' ||
-          (typeof p.Tendencia === 'string' && (p.Tendencia.toLowerCase() === 'si' || p.Tendencia.toLowerCase() === 'yes' || p.Tendencia.toLowerCase() === 'true'))
-        );
-      } else {
-        // Matches Categoria exactly (case-insensitive)
-        filteredProducts = filteredProducts.filter(p =>
-          p.Categoria && p.Categoria.toLowerCase() === targetStyle
-        );
+      if (targetStyle !== 'precio_asc' && targetStyle !== 'precio-asc' && targetStyle !== 'precio_desc' && targetStyle !== 'precio-desc') {
+        if (targetStyle === 'nuevo' || targetStyle === 'new') {
+          filteredProducts = filteredProducts.filter(p =>
+            p.Nuevo === true ||
+            p.Nuevo === 'true' ||
+            (typeof p.Nuevo === 'string' && (p.Nuevo.toLowerCase() === 'si' || p.Nuevo.toLowerCase() === 'yes' || p.Nuevo.toLowerCase() === 'true'))
+          );
+        } else if (targetStyle === 'tendencia' || targetStyle === 'trending') {
+          filteredProducts = filteredProducts.filter(p =>
+            p.Tendencia === true ||
+            p.Tendencia === 'true' ||
+            (typeof p.Tendencia === 'string' && (p.Tendencia.toLowerCase() === 'si' || p.Tendencia.toLowerCase() === 'yes' || p.Tendencia.toLowerCase() === 'true'))
+          );
+        } else {
+          // Matches Categoria exactly (case-insensitive)
+          filteredProducts = filteredProducts.filter(p =>
+            p.Categoria && p.Categoria.toLowerCase() === targetStyle
+          );
+        }
       }
     }
 
@@ -84,14 +86,21 @@ app.get('/api/shopreel', async (req, res) => {
       );
     }
 
-    // Sort products: priority to 'numorden' (ascending), items without 'numorden' go to the end
-    filteredProducts.sort((a, b) => {
-      const numA = Number(a.numorden);
-      const numB = Number(b.numorden);
-      const orderA = (a.numorden !== undefined && a.numorden !== null && a.numorden !== '' && !isNaN(numA)) ? numA : Infinity;
-      const orderB = (b.numorden !== undefined && b.numorden !== null && b.numorden !== '' && !isNaN(numB)) ? numB : Infinity;
-      return orderA - orderB;
-    });
+    // Sort products based on price or priority 'numorden'
+    const sortStyle = style ? style.trim().toLowerCase() : '';
+    if (sortStyle === 'precio_asc' || sortStyle === 'precio-asc') {
+      filteredProducts.sort((a, b) => (Number(a.Precio) || 0) - (Number(b.Precio) || 0));
+    } else if (sortStyle === 'precio_desc' || sortStyle === 'precio-desc') {
+      filteredProducts.sort((a, b) => (Number(b.Precio) || 0) - (Number(a.Precio) || 0));
+    } else {
+      filteredProducts.sort((a, b) => {
+        const numA = Number(a.numorden !== undefined ? a.numorden : a.numOrden);
+        const numB = Number(b.numorden !== undefined ? b.numorden : b.numOrden);
+        const orderA = (a.numorden !== undefined && a.numorden !== null && a.numorden !== '' && !isNaN(numA)) ? numA : Infinity;
+        const orderB = (b.numorden !== undefined && b.numorden !== null && b.numorden !== '' && !isNaN(numB)) ? numB : Infinity;
+        return orderA - orderB;
+      });
+    }
 
     res.json(filteredProducts);
   } catch (error) {
