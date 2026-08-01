@@ -18,6 +18,21 @@ app.use((req, reqResponse, next) => {
   next();
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: '🚀 ByAngels Backend API is running successfully!',
+    endpoints: [
+      '/api/health',
+      '/api/shopreel',
+      '/api/Musics',
+      '/api/notice',
+      '/api/inicio'
+    ]
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
