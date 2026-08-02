@@ -14,7 +14,8 @@ const {
   getCierreConfig,
   updateCierreConfig,
   getDescuentosConfig,
-  updateDescuentosConfig
+  updateDescuentosConfig,
+  updateNoticeConfig
 } = require('./firebase');
 
 const app = express();
@@ -185,6 +186,17 @@ app.get('/api/notice', async (req, res) => {
     res.json(noticeData);
   } catch (error) {
     console.error('Error fetching Notice:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// POST /api/notice - Updates news/notices image reels
+app.post('/api/notice', async (req, res) => {
+  try {
+    const updated = await updateNoticeConfig(req.body);
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating Notice:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 });

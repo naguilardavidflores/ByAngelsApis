@@ -594,6 +594,47 @@ async function updateDescuentosConfig(rangosData) {
   return rangos;
 }
 
+/**
+ * Updates the News/Notices image reel URLs in Firestore or Mock DB.
+ */
+async function updateNoticeConfig(noticesArray) {
+  const formattedDoc = {};
+  if (Array.isArray(noticesArray)) {
+    noticesArray.forEach((item, idx) => {
+      const url = typeof item === 'string' ? item : (item.url || (item && item[`urlN${idx}`]) || '');
+      if (url && typeof url === 'string' && url.trim()) {
+        formattedDoc[`urlN${idx}`] = url.trim();
+      }
+    });
+  }
+
+  delete firestoreCache['Notice'];
+
+  if (!isMock && db) {
+    try {
+      const noticeRef = db.collection('Notice').doc('main_notices');
+      await noticeRef.set({
+        ...formattedDoc,
+        actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return [formattedDoc];
+    } catch (err) {
+      console.error('Error updating Notice in Firestore:', err.message);
+    }
+  }
+
+  // Mock Fallback
+  mockData.notice = [formattedDoc];
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {}
+
+  return [formattedDoc];
+}
+
 module.exports = {
   db,
   isMock,
@@ -607,7 +648,8 @@ module.exports = {
   getCierreConfig,
   updateCierreConfig,
   getDescuentosConfig,
-  updateDescuentosConfig
+  updateDescuentosConfig,
+  updateNoticeConfig
 };
 
 
