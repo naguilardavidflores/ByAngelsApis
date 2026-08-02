@@ -423,10 +423,18 @@ async function deleteShopReelProduct(id) {
 }
 
 const DEFAULT_CIERRE_CONFIG = {
-  diaInicio: 'Lunes',     // Day of week start (Lunes, Martes, etc.)
-  horaInicio: '08:00',    // Start time HH:mm
-  diaFin: 'Viernes',      // Day of week deadline (Viernes, Sábado, etc.)
-  horaFin: '23:59',       // Deadline time HH:mm
+  // Ciclo 1 (Primera Entrega semanal)
+  diaInicio1: 'Lunes',
+  horaInicio1: '08:00',
+  diaFin1: 'Miércoles',
+  horaFin1: '23:59',
+
+  // Ciclo 2 (Segunda Entrega semanal)
+  diaInicio2: 'Jueves',
+  horaInicio2: '08:00',
+  diaFin2: 'Sábado',
+  horaFin2: '23:59',
+
   titulo: 'Cierre de Pedidos',
   activo: true
 };
@@ -464,10 +472,19 @@ async function getCierreConfig() {
  */
 async function updateCierreConfig(configData) {
   const updated = {
-    diaInicio: configData.diaInicio || 'Lunes',
-    horaInicio: configData.horaInicio || '08:00',
-    diaFin: configData.diaFin || 'Viernes',
-    horaFin: configData.horaFin || '23:59',
+    diaInicio1: configData.diaInicio1 || 'Lunes',
+    horaInicio1: configData.horaInicio1 || '08:00',
+    diaFin1: configData.diaFin1 || 'Miércoles',
+    horaFin1: configData.horaFin1 || '23:59',
+
+    diaInicio2: configData.diaInicio2 || 'Jueves',
+    horaInicio2: configData.horaInicio2 || '08:00',
+    diaFin2: configData.diaFin2 || 'Sábado',
+    horaFin2: configData.horaFin2 || '23:59',
+
+    titulo: configData.titulo || 'Cierre de Pedidos',
+    activo: configData.activo !== false
+  };
     titulo: configData.titulo || 'Cierre de Pedidos',
     activo: configData.activo !== false
   };
