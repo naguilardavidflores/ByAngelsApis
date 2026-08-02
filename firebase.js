@@ -514,6 +514,86 @@ async function updateCierreConfig(configData) {
   return updated;
 }
 
+const DEFAULT_DESCUENTOS_CONFIG = [
+  {
+    id: 'rango_default_1',
+    nombre: 'Rango 37 - 40 S/.',
+    rangoInicio: 37.00,
+    rangoFin: 40.00,
+    activo: true,
+    escalones: [
+      { cantidadMinima: 3, precioOferta: 33.30 },
+      { cantidadMinima: 6, precioOferta: 30.00 },
+      { cantidadMinima: 12, precioOferta: 28.00 }
+    ]
+  }
+];
+
+/**
+ * Retrieves the Price-Range Volume Discount Rules from Firestore or Mock DB.
+ */
+async function getDescuentosConfig() {
+  if (!isMock && db) {
+    try {
+      const docRef = db.collection('config').doc('descuentos');
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        if (data && Array.isArray(data.rangos)) {
+          return data.rangos;
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Error reading descuentos config from Firestore:', err.message);
+    }
+  }
+
+  // Fallback to Mock Data
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  if (fs.existsSync(mockFilePath)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(mockFilePath, 'utf8'));
+      if (Array.isArray(data.descuentosConfig)) return data.descuentosConfig;
+    } catch (e) {}
+  }
+
+  return DEFAULT_DESCUENTOS_CONFIG;
+}
+
+/**
+ * Updates the Price-Range Volume Discount Rules in Firestore or Mock DB.
+ */
+async function updateDescuentosConfig(rangosData) {
+  const rangos = Array.isArray(rangosData) ? rangosData : DEFAULT_DESCUENTOS_CONFIG;
+
+  if (!isMock && db) {
+    try {
+      const docRef = db.collection('config').doc('descuentos');
+      await docRef.set({
+        rangos,
+        actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      return rangos;
+    } catch (err) {
+      console.error('Error updating descuentos config in Firestore:', err.message);
+    }
+  }
+
+  // Mock Fallback
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  mockData.descuentosConfig = rangos;
+
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on descuentos config:', err.message);
+  }
+
+  return rangos;
+}
+
 module.exports = {
   db,
   isMock,
@@ -525,7 +605,9 @@ module.exports = {
   updateShopReelProduct,
   deleteShopReelProduct,
   getCierreConfig,
-  updateCierreConfig
+  updateCierreConfig,
+  getDescuentosConfig,
+  updateDescuentosConfig
 };
 
 

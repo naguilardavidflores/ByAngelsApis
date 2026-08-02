@@ -12,7 +12,9 @@ const {
   updateShopReelProduct,
   deleteShopReelProduct,
   getCierreConfig,
-  updateCierreConfig
+  updateCierreConfig,
+  getDescuentosConfig,
+  updateDescuentosConfig
 } = require('./firebase');
 
 const app = express();
@@ -231,6 +233,28 @@ app.post('/api/cierre', async (req, res) => {
     res.json(updated);
   } catch (error) {
     console.error('Error updating cierre config:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// GET /api/descuentos - Retrieves price-range volume discount rules
+app.get('/api/descuentos', async (req, res) => {
+  try {
+    const rules = await getDescuentosConfig();
+    res.json(rules);
+  } catch (error) {
+    console.error('Error fetching descuentos config:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// POST /api/descuentos - Updates price-range volume discount rules
+app.post('/api/descuentos', async (req, res) => {
+  try {
+    const updated = await updateDescuentosConfig(req.body);
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating descuentos config:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 });
