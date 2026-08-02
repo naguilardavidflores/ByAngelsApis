@@ -422,6 +422,84 @@ async function deleteShopReelProduct(id) {
   return { success: true, id };
 }
 
+const DEFAULT_CIERRE_CONFIG = {
+  diaInicio: 'Lunes',     // Day of week start (Lunes, Martes, etc.)
+  horaInicio: '08:00',    // Start time HH:mm
+  diaFin: 'Viernes',      // Day of week deadline (Viernes, Sábado, etc.)
+  horaFin: '23:59',       // Deadline time HH:mm
+  titulo: 'Cierre de Pedidos',
+  activo: true
+};
+
+/**
+ * Retrieves the Order Closing schedule configuration from Firestore or Mock DB.
+ */
+async function getCierreConfig() {
+  if (!isMock && db) {
+    try {
+      const docRef = db.collection('config').doc('cierre');
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        return { ...DEFAULT_CIERRE_CONFIG, ...docSnap.data() };
+      }
+    } catch (err) {
+      console.warn('⚠️ Error reading cierre config from Firestore:', err.message);
+    }
+  }
+
+  // Fallback to Mock Data
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  if (fs.existsSync(mockFilePath)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(mockFilePath, 'utf8'));
+      if (data.cierreConfig) return { ...DEFAULT_CIERRE_CONFIG, ...data.cierreConfig };
+    } catch (e) {}
+  }
+
+  return DEFAULT_CIERRE_CONFIG;
+}
+
+/**
+ * Updates the Order Closing schedule configuration in Firestore or Mock DB.
+ */
+async function updateCierreConfig(configData) {
+  const updated = {
+    diaInicio: configData.diaInicio || 'Lunes',
+    horaInicio: configData.horaInicio || '08:00',
+    diaFin: configData.diaFin || 'Viernes',
+    horaFin: configData.horaFin || '23:59',
+    titulo: configData.titulo || 'Cierre de Pedidos',
+    activo: configData.activo !== false
+  };
+
+  if (!isMock && db) {
+    try {
+      const docRef = db.collection('config').doc('cierre');
+      await docRef.set({
+        ...updated,
+        actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      return updated;
+    } catch (err) {
+      console.error('Error updating cierre config in Firestore:', err.message);
+    }
+  }
+
+  // Mock Fallback
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  mockData.cierreConfig = updated;
+
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on cierre config:', err.message);
+  }
+
+  return updated;
+}
+
 module.exports = {
   db,
   isMock,
@@ -431,7 +509,10 @@ module.exports = {
   getNextContactoNumber,
   createShopReelProduct,
   updateShopReelProduct,
-  deleteShopReelProduct
+  deleteShopReelProduct,
+  getCierreConfig,
+  updateCierreConfig
 };
+
 
 

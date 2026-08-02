@@ -10,7 +10,9 @@ const {
   getNextContactoNumber,
   createShopReelProduct,
   updateShopReelProduct,
-  deleteShopReelProduct
+  deleteShopReelProduct,
+  getCierreConfig,
+  updateCierreConfig
 } = require('./firebase');
 
 const app = express();
@@ -210,6 +212,28 @@ const handleNextContacto = async (req, res) => {
 app.get('/api/contacto/next', handleNextContacto);
 app.post('/api/contacto/next', handleNextContacto);
 app.post('/api/contacto', handleNextContacto);
+
+// GET /api/cierre - Retrieves order closing countdown configuration
+app.get('/api/cierre', async (req, res) => {
+  try {
+    const config = await getCierreConfig();
+    res.json(config);
+  } catch (error) {
+    console.error('Error fetching cierre config:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// POST /api/cierre - Updates order closing countdown configuration
+app.post('/api/cierre', async (req, res) => {
+  try {
+    const updated = await updateCierreConfig(req.body);
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating cierre config:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
 
 // GET /api/proxy-video/* - Proxies video streams and segment files to bypass CORS restrictions
 app.get('/api/proxy-video/*', (req, res) => {
