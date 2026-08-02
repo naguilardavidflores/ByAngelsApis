@@ -516,16 +516,12 @@ async function updateCierreConfig(configData) {
 
 const DEFAULT_DESCUENTOS_CONFIG = [
   {
-    id: 'rango_default_1',
-    nombre: 'Rango 37 - 40 S/.',
-    rangoInicio: 37.00,
-    rangoFin: 40.00,
+    id: 'rango_1',
+    nombre: '',
+    rangoInicio: '',
+    rangoFin: '',
     activo: true,
-    escalones: [
-      { cantidadMinima: 3, precioOferta: 33.30 },
-      { cantidadMinima: 6, precioOferta: 30.00 },
-      { cantidadMinima: 12, precioOferta: 28.00 }
-    ]
+    escalones: []
   }
 ];
 
