@@ -43,9 +43,42 @@ app.get('/', (req, res) => {
       '/api/notice',
       '/api/inicio',
       '/api/contacto',
-      '/api/contacto/next'
+      '/api/contacto/next',
+      '/api/pinterest-video'
     ]
   });
+});
+
+// Extract raw MP4 video URL from Pinterest Pin link
+app.get('/api/pinterest-video', async (req, res) => {
+  try {
+    const targetUrl = req.query.url;
+    if (!targetUrl) return res.status(400).json({ error: 'URL parameter required' });
+
+    console.log(`[Pinterest Parser] Fetching raw video for: ${targetUrl}`);
+    const response = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      }
+    });
+
+    const html = await response.text();
+    
+    // Extract mp4 video URL using regex
+    const mp4Match = html.match(/(https?:\\\/\\\/v\d*\.pinimg\.com\\\/videos\\\/[^\s"'\\>]+\.mp4|https?:\/\/v\d*\.pinimg\.com\/videos\/[^\s"'\\>]+\.mp4)/i);
+    
+    if (mp4Match && mp4Match[0]) {
+      const cleanUrl = mp4Match[0].replace(/\\/g, '');
+      console.log(`[Pinterest Parser] Successfully extracted MP4: ${cleanUrl}`);
+      return res.json({ videoUrl: cleanUrl });
+    }
+    
+    return res.status(404).json({ error: 'No direct MP4 video stream found on Pinterest pin page' });
+  } catch (err) {
+    console.error(`[Pinterest Parser] Error:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Health check endpoint
