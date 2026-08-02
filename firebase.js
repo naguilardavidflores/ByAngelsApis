@@ -637,6 +637,129 @@ async function updateNoticeConfig(noticesArray) {
   return [formattedDoc];
 }
 
+/**
+ * Creates a new music track entry in Firestore or Mock DB.
+ */
+async function createMusicTrack(trackData) {
+  delete firestoreCache['Musics'];
+  const title = trackData.title || trackData.NombreMusic || 'Canción sin título';
+  const formattedTrack = {
+    title: title,
+    NombreMusic: title,
+    artist: trackData.artist || 'ByAngels Boutique',
+    url: trackData.url || trackData.urlMusic || ''
+  };
+
+  if (!isMock && db) {
+    try {
+      const docRef = await db.collection('Musics').add({
+        ...formattedTrack,
+        creadoEn: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return { id: docRef.id, ...formattedTrack };
+    } catch (err) {
+      console.error('Error creating music track in Firestore:', err.message);
+    }
+  }
+
+  // Mock Fallback
+  const newId = 'song_' + Date.now();
+  const createdItem = { id: newId, ...formattedTrack };
+  if (!mockData.musics) mockData.musics = [];
+  mockData.musics.push(createdItem);
+
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on create music:', err.message);
+  }
+
+  return createdItem;
+}
+
+/**
+ * Updates an existing music track entry in Firestore or Mock DB.
+ */
+async function updateMusicTrack(id, trackData) {
+  delete firestoreCache['Musics'];
+  const title = trackData.title || trackData.NombreMusic || 'Canción sin título';
+  const updatedFields = {
+    title: title,
+    NombreMusic: title,
+    artist: trackData.artist || 'ByAngels Boutique',
+    url: trackData.url || trackData.urlMusic || ''
+  };
+
+  if (!isMock && db) {
+    try {
+      await db.collection('Musics').doc(id).set(
+        {
+          ...updatedFields,
+          actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+      return { id, ...updatedFields };
+    } catch (err) {
+      console.error('Error updating music track in Firestore:', err.message);
+    }
+  }
+
+  // Mock Fallback
+  if (mockData.musics) {
+    const idx = mockData.musics.findIndex(s => s.id === id);
+    if (idx !== -1) {
+      mockData.musics[idx] = { ...mockData.musics[idx], ...updatedFields };
+    }
+  }
+
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on update music:', err.message);
+  }
+
+  return { id, ...updatedFields };
+}
+
+/**
+ * Deletes a music track entry from Firestore or Mock DB.
+ */
+async function deleteMusicTrack(id) {
+  delete firestoreCache['Musics'];
+
+  if (!isMock && db) {
+    try {
+      await db.collection('Musics').doc(id).delete();
+      return { success: true, id };
+    } catch (err) {
+      console.error('Error deleting music track from Firestore:', err.message);
+    }
+  }
+
+  // Mock Fallback
+  if (mockData.musics) {
+    mockData.musics = mockData.musics.filter(s => s.id !== id);
+  }
+
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on delete music:', err.message);
+  }
+
+  return { success: true, id };
+}
+
 module.exports = {
   db,
   isMock,
@@ -651,7 +774,10 @@ module.exports = {
   updateCierreConfig,
   getDescuentosConfig,
   updateDescuentosConfig,
-  updateNoticeConfig
+  updateNoticeConfig,
+  createMusicTrack,
+  updateMusicTrack,
+  deleteMusicTrack
 };
 
 

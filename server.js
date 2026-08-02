@@ -15,7 +15,10 @@ const {
   updateCierreConfig,
   getDescuentosConfig,
   updateDescuentosConfig,
-  updateNoticeConfig
+  updateNoticeConfig,
+  createMusicTrack,
+  updateMusicTrack,
+  deleteMusicTrack
 } = require('./firebase');
 
 const app = express();
@@ -197,6 +200,41 @@ app.get('/api/Musics', async (req, res) => {
     res.json(tracks);
   } catch (error) {
     console.error('Error fetching Musics:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// POST /api/Musics - Create a new music track
+app.post('/api/Musics', async (req, res) => {
+  try {
+    const newTrack = await createMusicTrack(req.body);
+    res.status(201).json(newTrack);
+  } catch (error) {
+    console.error('Error creating music track:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// PUT /api/Musics/:id - Update an existing music track
+app.put('/api/Musics/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedTrack = await updateMusicTrack(id, req.body);
+    res.json(updatedTrack);
+  } catch (error) {
+    console.error('Error updating music track:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
+// DELETE /api/Musics/:id - Delete a music track
+app.delete('/api/Musics/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await deleteMusicTrack(id);
+    res.json(result);
+  } catch (error) {
+    console.error('Error deleting music track:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 });
