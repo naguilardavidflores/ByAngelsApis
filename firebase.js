@@ -282,6 +282,7 @@ async function createShopReelProduct(productData) {
     Categoria: productData.Categoria || 'Casual',
     Color: productData.Color || '',
     Precio: String(productData.Precio || '0.00'),
+    precioDolares: String(productData.precioDolares || productData.PrecioDolares || ''),
     Nuevo: productData.Nuevo === true || productData.Nuevo === 'Si' || productData.Nuevo === 'true' ? 'Si' : 'No',
     Tendencia: productData.Tendencia === true || productData.Tendencia === 'Si' || productData.Tendencia === 'true' ? 'Si' : 'No',
     numorden: String(nextOrder),
@@ -291,7 +292,8 @@ async function createShopReelProduct(productData) {
     imgReel3: productData.imgReel3 || '',
     imgReel4: productData.imgReel4 || '',
     imgReel5: productData.imgReel5 || '',
-    imgReel6: productData.imgReel6 || ''
+    imgReel6: productData.imgReel6 || '',
+    imgReel7: productData.imgReel7 || ''
   };
 
   // Invalidate cache
@@ -340,6 +342,7 @@ async function updateShopReelProduct(id, productData) {
     Categoria: productData.Categoria || 'Casual',
     Color: productData.Color || '',
     Precio: String(productData.Precio || '0.00'),
+    precioDolares: String(productData.precioDolares || productData.PrecioDolares || ''),
     Nuevo: productData.Nuevo === true || productData.Nuevo === 'Si' || productData.Nuevo === 'true' ? 'Si' : 'No',
     Tendencia: productData.Tendencia === true || productData.Tendencia === 'Si' || productData.Tendencia === 'true' ? 'Si' : 'No',
     imgReel0: productData.imgReel0 || '',
@@ -348,7 +351,8 @@ async function updateShopReelProduct(id, productData) {
     imgReel3: productData.imgReel3 || '',
     imgReel4: productData.imgReel4 || '',
     imgReel5: productData.imgReel5 || '',
-    imgReel6: productData.imgReel6 || ''
+    imgReel6: productData.imgReel6 || '',
+    imgReel7: productData.imgReel7 || ''
   };
 
   if (productData.numorden !== undefined && productData.numorden !== null) {
