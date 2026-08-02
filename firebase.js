@@ -485,9 +485,6 @@ async function updateCierreConfig(configData) {
     titulo: configData.titulo || 'Cierre de Pedidos',
     activo: configData.activo !== false
   };
-    titulo: configData.titulo || 'Cierre de Pedidos',
-    activo: configData.activo !== false
-  };
 
   if (!isMock && db) {
     try {
