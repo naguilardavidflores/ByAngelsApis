@@ -293,7 +293,8 @@ async function createShopReelProduct(productData) {
     imgReel4: productData.imgReel4 || '',
     imgReel5: productData.imgReel5 || '',
     imgReel6: productData.imgReel6 || '',
-    imgReel7: productData.imgReel7 || ''
+    imgReel7: productData.imgReel7 || '',
+    urlVideoPasarela: productData.urlVideoPasarela || productData.urlVideo || ''
   };
 
   // Invalidate cache
@@ -352,7 +353,8 @@ async function updateShopReelProduct(id, productData) {
     imgReel4: productData.imgReel4 || '',
     imgReel5: productData.imgReel5 || '',
     imgReel6: productData.imgReel6 || '',
-    imgReel7: productData.imgReel7 || ''
+    imgReel7: productData.imgReel7 || '',
+    urlVideoPasarela: productData.urlVideoPasarela || productData.urlVideo || ''
   };
 
   if (productData.numorden !== undefined && productData.numorden !== null) {
