@@ -53,7 +53,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Extract raw MP4 video URL from Pinterest Pin link
+// Extract raw MP4 or HLS video URL from Pinterest Pin link
 app.get('/api/pinterest-video', async (req, res) => {
   try {
     const targetUrl = req.query.url;
@@ -62,14 +62,15 @@ app.get('/api/pinterest-video', async (req, res) => {
     console.log(`[Pinterest Parser] Fetching raw video for: ${targetUrl}`);
     const response = await fetch(targetUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
       }
     });
 
     const html = await response.text();
     
-    // Extract mp4 video URL using regex
+    // 1. Direct .mp4 video link (720p, 1080p, exp, mc, etc.)
     const mp4Match = html.match(/(https?:\\\/\\\/v\d*\.pinimg\.com\\\/videos\\\/[^\s"'\\>]+\.mp4|https?:\/\/v\d*\.pinimg\.com\/videos\/[^\s"'\\>]+\.mp4)/i);
     
     if (mp4Match && mp4Match[0]) {
@@ -78,7 +79,23 @@ app.get('/api/pinterest-video', async (req, res) => {
       return res.json({ videoUrl: cleanUrl });
     }
     
-    return res.status(404).json({ error: 'No direct MP4 video stream found on Pinterest pin page' });
+    // 2. .m3u8 HLS stream URL
+    const m3u8Match = html.match(/(https?:\\\/\\\/v\d*\.pinimg\.com\\\/videos\\\/[^\s"'\\>]+\.m3u8|https?:\/\/v\d*\.pinimg\.com\/videos\/[^\s"'\\>]+\.m3u8)/i);
+    if (m3u8Match && m3u8Match[0]) {
+      const cleanUrl = m3u8Match[0].replace(/\\/g, '');
+      console.log(`[Pinterest Parser] Successfully extracted HLS .m3u8: ${cleanUrl}`);
+      return res.json({ videoUrl: cleanUrl });
+    }
+
+    // 3. Fallback search inside JSON data script tags
+    const urlInJson = html.match(/https?:\/\/v\d*\.pinimg\.com\/videos\/[^\s"'\\>]+\.(mp4|m3u8)/i);
+    if (urlInJson && urlInJson[0]) {
+      const cleanUrl = urlInJson[0].replace(/\\/g, '');
+      console.log(`[Pinterest Parser] Successfully extracted video from JSON metadata: ${cleanUrl}`);
+      return res.json({ videoUrl: cleanUrl });
+    }
+    
+    return res.status(404).json({ error: 'No direct MP4 or video stream found on Pinterest pin page' });
   } catch (err) {
     console.error(`[Pinterest Parser] Error:`, err.message);
     res.status(500).json({ error: err.message });
