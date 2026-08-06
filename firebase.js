@@ -638,6 +638,54 @@ async function updateNoticeConfig(noticesArray) {
 }
 
 /**
+ * Updates the Start/Welcome view video or image URL in Firestore or Mock DB.
+ */
+async function updateInicioConfig(videoUrl) {
+  const url = (videoUrl && typeof videoUrl === 'string') ? videoUrl.trim() : '';
+  delete firestoreCache['Inicio'];
+
+  const updatedDoc = { id: 'inicio_doc', UrlInicio: url };
+
+  if (!isMock && db) {
+    try {
+      const snapshot = await db.collection('Inicio').limit(1).get();
+      let docId = 'inicio_doc';
+      if (!snapshot.empty) {
+        docId = snapshot.docs[0].id;
+      }
+      await db.collection('Inicio').doc(docId).set({
+        UrlInicio: url,
+        actualizadoEn: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      return [{ id: docId, UrlInicio: url }];
+    } catch (err) {
+      console.error('Error updating Inicio in Firestore:', err.message);
+    }
+  }
+
+  // Mock Fallback
+  if (!mockData.Inicio || !Array.isArray(mockData.Inicio)) {
+    mockData.Inicio = [updatedDoc];
+  } else if (mockData.Inicio.length > 0) {
+    mockData.Inicio[0].UrlInicio = url;
+  } else {
+    mockData.Inicio.push(updatedDoc);
+  }
+
+  const mockFilePath = path.join(__dirname, 'mockData.json');
+  try {
+    if (fs.existsSync(mockFilePath)) {
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('Could not update mockData.json on update inicio:', err.message);
+  }
+
+  return mockData.Inicio;
+}
+
+
+/**
  * Creates a new music track entry in Firestore or Mock DB.
  */
 async function createMusicTrack(trackData) {
@@ -775,6 +823,7 @@ module.exports = {
   getDescuentosConfig,
   updateDescuentosConfig,
   updateNoticeConfig,
+  updateInicioConfig,
   createMusicTrack,
   updateMusicTrack,
   deleteMusicTrack

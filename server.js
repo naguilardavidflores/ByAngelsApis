@@ -16,6 +16,7 @@ const {
   getDescuentosConfig,
   updateDescuentosConfig,
   updateNoticeConfig,
+  updateInicioConfig,
   createMusicTrack,
   updateMusicTrack,
   deleteMusicTrack
@@ -249,6 +250,20 @@ app.get('/api/inicio', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 });
+
+// POST /api/inicio - Updates start view configuration (Welcome screen video URL)
+app.post('/api/inicio', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const videoUrl = body.UrlInicio || body.url || body.urlInicio || (typeof body === 'string' ? body : '');
+    const updated = await updateInicioConfig(videoUrl);
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating Inicio:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
 
 // GET /api/notice - Retrieves news/notices lists
 app.get('/api/notice', async (req, res) => {
